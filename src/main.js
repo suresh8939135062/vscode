@@ -25,10 +25,6 @@ const { getUserDataPath } = require('./vs/platform/environment/node/userDataPath
 const product = require('../product.json');
 const { app, protocol, crashReporter } = require('electron');
 
-// Disable render process reuse, we still have
-// non-context aware native modules in the renderer.
-app.allowRendererProcessReuse = false;
-
 // Enable portable support
 const portable = bootstrapNode.configurePortable(product);
 
