@@ -7,6 +7,7 @@ import { exec } from 'child_process';
 import { app, BrowserWindow, clipboard, Display, Menu, MessageBoxOptions, MessageBoxReturnValue, nativeTheme, OpenDevToolsOptions, OpenDialogOptions, OpenDialogReturnValue, powerMonitor, SaveDialogOptions, SaveDialogReturnValue, screen, shell } from 'electron';
 import { arch, cpus, freemem, loadavg, platform, release, totalmem, type } from 'os';
 import { promisify } from 'util';
+import { VSBuffer } from 'vs/base/common/buffer';
 import { memoize } from 'vs/base/common/decorators';
 import { Emitter, Event } from 'vs/base/common/event';
 import { mnemonicButtonLabel } from 'vs/base/common/labels';
@@ -25,6 +26,7 @@ import { ISerializableCommandAction } from 'vs/platform/actions/common/actions';
 import { INativeOpenDialogOptions } from 'vs/platform/dialogs/common/dialogs';
 import { IDialogMainService } from 'vs/platform/dialogs/electron-main/dialogMainService';
 import { IEnvironmentMainService } from 'vs/platform/environment/electron-main/environmentMainService';
+import { IFileContent, IFileService, IFileStatWithMetadata, IReadFileOptions, IWriteFileOptions } from 'vs/platform/files/common/files';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { ILifecycleMainService } from 'vs/platform/lifecycle/electron-main/lifecycleMainService';
 import { ILogService } from 'vs/platform/log/common/log';
@@ -56,6 +58,7 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
 		@IWindowsMainService private readonly windowsMainService: IWindowsMainService,
 		@IDialogMainService private readonly dialogMainService: IDialogMainService,
 		@ILifecycleMainService private readonly lifecycleMainService: ILifecycleMainService,
+		@IFileService private readonly fileService: IFileService,
 		@IEnvironmentMainService private readonly environmentMainService: IEnvironmentMainService,
 		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ILogService private readonly logService: ILogService,
@@ -508,6 +511,44 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
 		return isAdmin;
 	}
 
+	async getOSStatistics(): Promise<IOSStatistics> {
+		return {
+			totalmem: totalmem(),
+			freemem: freemem(),
+			loadavg: loadavg()
+		};
+	}
+
+	async getOSProperties(): Promise<IOSProperties> {
+		return {
+			arch: arch(),
+			platform: platform(),
+			release: release(),
+			type: type(),
+			cpus: cpus()
+		};
+	}
+
+	async getOSVirtualMachineHint(): Promise<number> {
+		return virtualMachineHint.value();
+	}
+
+	private get osColorScheme(): IColorScheme {
+		return {
+			highContrast: nativeTheme.shouldUseInvertedColorScheme || nativeTheme.shouldUseHighContrastColors,
+			dark: nativeTheme.shouldUseDarkColors
+		};
+	}
+
+	async getOSColorScheme(): Promise<IColorScheme> {
+		return this.osColorScheme;
+	}
+
+	//#endregion
+
+
+	//#region Files
+
 	async writeElevated(windowId: number | undefined, source: URI, target: URI, options?: { unlock?: boolean }): Promise<void> {
 		const sudoPrompt = await import('sudo-prompt');
 
@@ -571,39 +612,13 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
 		return join(this.environmentMainService.appRoot, 'scripts', 'code-cli.sh');
 	}
 
-	async getOSStatistics(): Promise<IOSStatistics> {
-		return {
-			totalmem: totalmem(),
-			freemem: freemem(),
-			loadavg: loadavg()
-		};
+	writeAtomic(windowId: number | undefined, resource: URI, buffer: VSBuffer, options?: IWriteFileOptions): Promise<IFileStatWithMetadata> {
+		return this.fileService.writeFile(resource, buffer, options);
 	}
 
-	async getOSProperties(): Promise<IOSProperties> {
-		return {
-			arch: arch(),
-			platform: platform(),
-			release: release(),
-			type: type(),
-			cpus: cpus()
-		};
+	readAtomic(windowId: number | undefined, resource: URI, options?: IReadFileOptions): Promise<IFileContent> {
+		return this.fileService.readFile(resource, { ...options, atomic: true });
 	}
-
-	async getOSVirtualMachineHint(): Promise<number> {
-		return virtualMachineHint.value();
-	}
-
-	private get osColorScheme(): IColorScheme {
-		return {
-			highContrast: nativeTheme.shouldUseInvertedColorScheme || nativeTheme.shouldUseHighContrastColors,
-			dark: nativeTheme.shouldUseDarkColors
-		};
-	}
-
-	public async getOSColorScheme(): Promise<IColorScheme> {
-		return this.osColorScheme;
-	}
-
 
 	//#endregion
 

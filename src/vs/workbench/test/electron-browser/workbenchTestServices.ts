@@ -8,7 +8,7 @@ import { Event } from 'vs/base/common/event';
 import { ISharedProcessService } from 'vs/platform/ipc/electron-sandbox/services';
 import { NativeTextFileService, } from 'vs/workbench/services/textfile/electron-sandbox/nativeTextFileService';
 import { INativeHostService } from 'vs/platform/native/electron-sandbox/native';
-import { FileOperationError, IFileService } from 'vs/platform/files/common/files';
+import { FileOperationError, IFileContent, IFileService, IFileStatWithMetadata, IReadFileOptions, IWriteFileOptions } from 'vs/platform/files/common/files';
 import { IUntitledTextEditorService } from 'vs/workbench/services/untitled/common/untitledTextEditorService';
 import { ILifecycleService } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -47,6 +47,7 @@ import product from 'vs/platform/product/common/product';
 import { IElevatedFileService } from 'vs/workbench/services/files/common/elevatedFileService';
 import { IDecorationsService } from 'vs/workbench/services/decorations/common/decorations';
 import { DisposableStore } from 'vs/base/common/lifecycle';
+import { VSBuffer } from 'vs/base/common/buffer';
 
 const args = parseArgs(process.argv, OPTIONS);
 
@@ -216,6 +217,8 @@ export class TestNativeHostService implements INativeHostService {
 	async setRepresentedFilename(path: string): Promise<void> { }
 	async isAdmin(): Promise<boolean> { return false; }
 	async writeElevated(source: URI, target: URI): Promise<void> { }
+	async writeAtomic(resource: URI, buffer: VSBuffer, options?: IWriteFileOptions): Promise<IFileStatWithMetadata> { throw new Error('Method not implemented.'); }
+	async readAtomic(resource: URI, options?: IReadFileOptions): Promise<IFileContent> { throw new Error('Method not implemented.'); }
 	async getOSProperties(): Promise<IOSProperties> { return Object.create(null); }
 	async getOSStatistics(): Promise<IOSStatistics> { return Object.create(null); }
 	async getOSVirtualMachineHint(): Promise<number> { return 0; }

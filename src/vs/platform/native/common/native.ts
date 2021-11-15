@@ -3,11 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { VSBuffer } from 'vs/base/common/buffer';
 import { Event } from 'vs/base/common/event';
 import { URI } from 'vs/base/common/uri';
 import { MessageBoxOptions, MessageBoxReturnValue, MouseInputEvent, OpenDevToolsOptions, OpenDialogOptions, OpenDialogReturnValue, SaveDialogOptions, SaveDialogReturnValue } from 'vs/base/parts/sandbox/common/electronTypes';
 import { ISerializableCommandAction } from 'vs/platform/actions/common/actions';
 import { INativeOpenDialogOptions } from 'vs/platform/dialogs/common/dialogs';
+import { IFileContent, IFileStatWithMetadata, IReadFileOptions, IWriteFileOptions } from 'vs/platform/files/common/files';
 import { IColorScheme, IOpenedWindow, IOpenEmptyWindowOptions, IOpenWindowOptions, IPartsSplash, IWindowOpenable } from 'vs/platform/windows/common/windows';
 
 export interface ICPUProperties {
@@ -102,13 +104,17 @@ export interface ICommonNativeHostService {
 	moveItemToTrash(fullPath: string): Promise<void>;
 
 	isAdmin(): Promise<boolean>;
-	writeElevated(source: URI, target: URI, options?: { unlock?: boolean }): Promise<void>;
 
 	getOSProperties(): Promise<IOSProperties>;
 	getOSStatistics(): Promise<IOSStatistics>;
 	getOSVirtualMachineHint(): Promise<number>;
 
 	getOSColorScheme(): Promise<IColorScheme>;
+
+	// Files
+	writeElevated(source: URI, target: URI, options?: { unlock?: boolean }): Promise<void>;
+	writeAtomic(resource: URI, buffer: VSBuffer, options?: IWriteFileOptions): Promise<IFileStatWithMetadata>;
+	readAtomic(resource: URI, options?: IReadFileOptions): Promise<IFileContent>;
 
 	// Process
 	killProcess(pid: number, code: string): Promise<void>;
